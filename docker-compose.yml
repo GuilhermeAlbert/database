@@ -1,0 +1,47 @@
+version: "3.7"
+services:
+  app:
+    build:
+      args:
+        user: backend
+        uid: 1000
+      context: ./
+      dockerfile: ./.docker/app/Dockerfile
+    image: backend
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - backend
+    depends_on:
+      - "mysql"
+
+  mysql:
+    platform: linux/x86_64 # use this line if you are using a mac OS slicon arch M1
+    image: mysql:8
+    command: --default-authentication-plugin=mysql_native_password # needed as of mysql 8
+    ports:
+      - "${DB_PORT}:3306"
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./.docker/mysql:/docker-entrypoint-initdb.d
+      - ./.docker/mysql/data:/var/lib/mysql
+      - .docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
